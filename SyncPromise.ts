@@ -44,7 +44,7 @@ class SyncPromiseReturn {
       callback: promiseCallback,
     });
 
-    return SyncPromiseReturn;
+    return syncPromiseReturn;
   }
 }
 
