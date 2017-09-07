@@ -21,7 +21,7 @@ class SyncPromiseReturn {
   public executeCatch(value: any) {
     this.catchCallbacks.forEach((promiseCallbackStack) => {
       const result = promiseCallbackStack.callback(value);
-      promiseCallbackStack.syncPromiseReturn.executeThen(result);
+      promiseCallbackStack.syncPromiseReturn.executeCatch(result);
     });
   }
 
@@ -61,7 +61,7 @@ export default class SyncPromise {
     };
 
     const reject = (message: any) => {
-      this.syncPromiseReturn.executeThen(message);
+      this.syncPromiseReturn.executeCatch(message);
     };
 
     this.then = this.syncPromiseReturn.then.bind(this.syncPromiseReturn);
