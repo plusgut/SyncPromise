@@ -1,73 +1,63 @@
-// This is an incomplete synchronous promise implementation
-type promiseCallback = (value: any) => void;
-type promiseCallbackStack = {syncPromiseReturn: SyncPromiseReturn, callback: promiseCallback};
+type promiseResolveCallback<T> = (value: T) => any;
+type promiseRejectCallback = () => any;
+type executor<T> = (resolve: promiseResolveCallback<T>, reject: promiseRejectCallback) => T;
+type callbacks = {
+  type: 'resolve' | 'reject',
+  callback: (value: any) => any;
+  promise: SyncPromise<any>
+}[];
 
-class SyncPromiseReturn {
-  thenCallbacks: promiseCallbackStack[];
-  catchCallbacks: promiseCallbackStack[];
-
-  constructor() {
-    this.thenCallbacks = [];
-    this.catchCallbacks = [];
+export default class SyncPromise<T> {
+  private callbacks: callbacks = [];
+  private executor: executor<T>; 
+  constructor(executor: executor<T>) {
+    this.executor = executor;
   }
 
-  public executeThen(value: any) {
-    this.thenCallbacks.forEach((promiseCallbackStack) => {
-      const result = promiseCallbackStack.callback(value);
-      promiseCallbackStack.syncPromiseReturn.executeThen(result);
-    });
-  }
+  public then(promiseResolveCallback: promiseResolveCallback<T>) {
+    const promiseCallback = () => {
 
-  public executeCatch(value: any) {
-    this.catchCallbacks.forEach((promiseCallbackStack) => {
-      const result = promiseCallbackStack.callback(value);
-      promiseCallbackStack.syncPromiseReturn.executeCatch(result);
-    });
-  }
-
-  public then(promiseCallback: promiseCallback) {
-    const syncPromiseReturn = new SyncPromiseReturn();
+    }
+    const promise = new SyncPromise(() => undefined);
     
-    this.thenCallbacks.push({
-      syncPromiseReturn,
-      callback: promiseCallback,
-    });
-
-    return syncPromiseReturn;
+    this.callbacks.push({
+      promise,
+      type: 'resolve',
+      callback: promiseResolveCallback,
+    })
+    return 
   }
 
-  public catch(promiseCallback: promiseCallback) {
-    const syncPromiseReturn = new SyncPromiseReturn();
-    
-    this.catchCallbacks.push({
-      syncPromiseReturn,
-      callback: promiseCallback,
-    });
+  public catch(promiseRejectCallback: promiseRejectCallback) {
+    const promiseCallback = () => {
 
-    return syncPromiseReturn;
+    }
+    const promise = new SyncPromise(() => undefined);
+
+    this.callbacks.push({
+      promise,
+      type: 'reject',
+      callback: promiseRejectCallback,
+    })
+    return new SyncPromise(() => undefined);
   }
-}
 
-export default class SyncPromise {
-  private syncPromiseReturn: SyncPromiseReturn;
-  public then: promiseCallback;
-  public catch: promiseCallback;
+  public callExecutor() {
+    const result = this.executor(this.resolve.bind(this), this.reject.bind(this));
+    this.resolve(result, );
+  }
 
-  constructor(promiseLogic: (resolve: promiseCallback, reject: promiseCallback) => void) {
-    this.syncPromiseReturn = new SyncPromiseReturn();
+  private resolve(value: T) {
+    this.callCallbacks(value, this.callbacks.filter(callback => callback.type === 'resolve'));
+  }
 
-    const resolve = (value: any) => {
-      this.syncPromiseReturn.executeThen(value);
-    };
+  private reject(value: any, callbacks) {
+    this.callCallbacks(value, this.callbacks.filter(callback => callback.type === 'reject'));
+  }
 
-    const reject = (message: any) => {
-      this.syncPromiseReturn.executeCatch(message);
-    };
-
-    this.then = this.syncPromiseReturn.then.bind(this.syncPromiseReturn);
-    this.catch = this.syncPromiseReturn.catch.bind(this.syncPromiseReturn);
-
-    promiseLogic.call(this, resolve, reject);
-
+  private callCallbacks(value: any, callbacks: callbacks) {
+    callbacks.forEach(callback => {
+      callback.callback(value);
+    });
   }
 }
